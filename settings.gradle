@@ -1,0 +1,4 @@
+rootProject.name = 'trade-agreement-corda'
+include 'contracts'
+include 'workflows'
+include 'server'

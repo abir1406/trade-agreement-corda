@@ -1,0 +1,43 @@
+apply plugin: 'java'
+apply plugin: 'net.corda.plugins.cordapp'
+// apply plugin: 'net.corda.plugins.quasar-utils'
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+cordapp {
+    targetPlatformVersion 12
+    minimumPlatformVersion 4
+    workflow {
+        name "Trade Agreement Workflows"
+        vendor "Enterprise Corda Solutions"
+        licence "Apache-2.0"
+        versionId 1
+    }
+}
+
+configurations {
+    quasar
+}
+
+dependencies {
+    quasar "co.paralleluniverse:quasar-core:0.9.0_r3@jar"
+
+    cordaProvided "net.corda:corda-core:$corda_release_version"
+    cordaProvided "co.paralleluniverse:quasar-core:0.9.0_r3"
+    cordaRuntimeOnly "net.corda:corda:$corda_release_version"
+
+    cordapp project(":contracts")
+
+    testImplementation "net.corda:corda-test-utils:$corda_release_version"
+    testImplementation "net.corda:corda-core-test-utils:$corda_release_version"
+    testImplementation "net.corda:corda-node-driver:$corda_release_version"
+    testImplementation "junit:junit:$junit_version"
+}
+
+test {
+    useJUnit()
+    doFirst {
+        jvmArgs "-javaagent:${configurations.quasar.singleFile}=x(org.gradle,worker.org.gradle,org.junit,com.intellij)"
+    }
+}

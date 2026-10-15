@@ -1,0 +1,87 @@
+buildscript {
+    ext {
+        corda_release_version = '4.12'
+        corda_gradle_plugins_version = '5.1.3'
+        kotlin_version = '1.7.20'
+        junit_version = '4.13.2'
+        spring_boot_version = '2.7.18'
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://download.corda.net/maven/corda-releases' }
+        maven { url 'https://download.corda.net/maven/corda-dependencies' }
+        maven { url 'https://repo.gradle.org/gradle/libs-releases-local' }
+    }
+
+    dependencies {
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_version"
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        maven { url 'https://download.corda.net/maven/corda-releases' }
+        maven { url 'https://download.corda.net/maven/corda-dependencies' }
+        maven { url 'https://repo.gradle.org/gradle/libs-releases-local' }
+        maven { url 'https://jitpack.io' }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-parameters"
+    }
+
+    tasks.withType(Test) {
+        jvmArgs = [
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+            "--add-opens=java.base/java.io=ALL-UNNAMED",
+            "--add-opens=java.base/java.net=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+            "--add-opens=java.base/java.time=ALL-UNNAMED",
+            "--add-opens=java.base/java.math=ALL-UNNAMED",
+            "--add-opens=java.base/java.nio=ALL-UNNAMED",
+            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+            "--add-opens=java.base/java.security=ALL-UNNAMED",
+            "--add-opens=java.base/java.security.cert=ALL-UNNAMED",
+            "--add-opens=java.base/sun.security.x509=ALL-UNNAMED",
+            "--add-opens=java.base/sun.security.util=ALL-UNNAMED",
+            "--add-opens=java.base/sun.security.pkcs=ALL-UNNAMED"
+        ]
+    }
+}
+
+apply plugin: 'net.corda.plugins.cordformation'
+
+task deployNodes(type: net.corda.plugins.Cordform) {
+    directory "./build/nodes"
+    node {
+        name "O=Notary,L=London,C=GB"
+        notary = [validating : false]
+        p2pPort 10002
+    }
+    node {
+        name "O=ABCElectronics,L=New York,C=US"
+        p2pPort 10005
+        rpcSettings {
+            address("localhost:10006")
+            adminAddress("localhost:10046")
+        }
+        rpcUsers = [[ user: "user1", "password": "password", "permissions": ["ALL"] ]]
+    }
+    node {
+        name "O=XYZRetailers,L=Paris,C=FR"
+        p2pPort 10008
+        rpcSettings {
+            address("localhost:10009")
+            adminAddress("localhost:10049")
+        }
+        rpcUsers = [[ user: "user1", "password": "password", "permissions": ["ALL"] ]]
+    }
+}

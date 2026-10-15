@@ -1,0 +1,29 @@
+apply plugin: 'java'
+apply plugin: 'net.corda.plugins.cordapp'
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+cordapp {
+    targetPlatformVersion 12
+    minimumPlatformVersion 4
+    contract {
+        name "Trade Agreement Contract"
+        vendor "Enterprise Corda Solutions"
+        licence "Apache-2.0"
+        versionId 1
+    }
+}
+
+dependencies {
+    cordaProvided "net.corda:corda-core:$corda_release_version"
+    cordaProvided "javax.persistence:javax.persistence-api:2.2"
+    testImplementation "net.corda:corda-test-utils:$corda_release_version"
+    testImplementation "net.corda:corda-core-test-utils:$corda_release_version"
+    testImplementation "net.corda:corda-node-driver:$corda_release_version"
+    testImplementation "junit:junit:$junit_version"
+}
+
+test {
+    useJUnit()
+}
