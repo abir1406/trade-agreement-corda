@@ -2,6 +2,9 @@ apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
+ext['kotlin.version'] = '1.9.20'
+ext['liquibase.version'] = '4.20.0'
+
 sourceCompatibility = 17
 targetCompatibility = 17
 
@@ -38,7 +41,7 @@ springBoot {
 bootRun {
     doFirst {
         jvmArgs = [
-            "-javaagent:${configurations.quasar.singleFile}=x(org.gradle,worker.org.gradle,org.junit,com.intellij)",
+            "-javaagent:${configurations.quasar.singleFile}=x(org.gradle,worker.org.gradle,org.junit,com.intellij,kotlin,org.springframework,org.apache,com.fasterxml,org.hibernate,org.jboss,org.slf4j,ch.qos.logback,org.apache.tomcat)",
             "--add-opens=java.base/java.lang=ALL-UNNAMED",
             "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
             "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
