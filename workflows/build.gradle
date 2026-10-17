@@ -8,6 +8,9 @@ targetCompatibility = 17
 cordapp {
     targetPlatformVersion 12
     minimumPlatformVersion 4
+    signing {
+        enabled false
+    }
     workflow {
         name "Trade Agreement Workflows"
         vendor "Enterprise Corda Solutions"

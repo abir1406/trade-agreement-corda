@@ -7,6 +7,9 @@ targetCompatibility = 17
 cordapp {
     targetPlatformVersion 12
     minimumPlatformVersion 4
+    signing {
+        enabled false
+    }
     contract {
         name "Trade Agreement Contract"
         vendor "Enterprise Corda Solutions"

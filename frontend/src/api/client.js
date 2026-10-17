@@ -25,8 +25,16 @@ async function request(method, path, body) {
 // ── Party & Identity ──────────────────────────────────────────────────────────
 export const getMe = () => request('GET', '/me')
 export const getParties = () => request('GET', '/parties')
-export const switchParty = (partyName) =>
-  request('POST', '/switch-party', { partyName })
+export const switchParty = (partyNameOrRole) => {
+  const role =
+    typeof partyNameOrRole === 'string' &&
+    (partyNameOrRole.toUpperCase().includes('BUYER') ||
+      partyNameOrRole.includes('XYZ') ||
+      partyNameOrRole.includes('Paris'))
+      ? 'BUYER'
+      : 'SELLER'
+  return request('POST', '/switch-party', { partyName: partyNameOrRole, role })
+}
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 export const getStats = () => request('GET', '/stats')

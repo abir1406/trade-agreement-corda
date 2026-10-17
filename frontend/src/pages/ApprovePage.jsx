@@ -62,10 +62,19 @@ export default function ApprovePage() {
     return m ? m[1] : name
   }
 
-  if (loading) return <LoadingSpinner message="Scanning vault for pending agreements..." />
+  const isMeBuyer = (buyerOrgOrName) => {
+    if (!buyerOrgOrName || !me) return false
+    return (
+      buyerOrgOrName === me.party ||
+      buyerOrgOrName === me.organisation ||
+      buyerOrgOrName === me.name ||
+      me.name?.includes(buyerOrgOrName) ||
+      (me.role === 'BUYER' && (buyerOrgOrName === 'XYZRetailers' || buyerOrgOrName.includes('XYZ')))
+    )
+  }
 
-  const myPending = agreements.filter((a) => a.buyer === me?.name)
-  const otherPending = agreements.filter((a) => a.buyer !== me?.name)
+  const myPending = agreements.filter((a) => isMeBuyer(a.buyer))
+  const otherPending = agreements.filter((a) => !isMeBuyer(a.buyer))
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -99,7 +108,7 @@ export default function ApprovePage() {
       <div className="space-y-4">
         <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-500" />
-          Pending Approvals for You ({shortOrg(me?.name)})
+          Pending Approvals for You ({me?.party || me?.organisation || shortOrg(me?.name)})
         </h2>
 
         {myPending.length === 0 ? (

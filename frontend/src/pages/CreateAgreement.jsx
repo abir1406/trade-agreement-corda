@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAgreement, getParties } from '../api/client'
 import { useParty } from '../context/PartyContext'
-import { PlusCircle, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react'
+import { PlusCircle, AlertCircle, CheckCircle, ArrowLeft, ArrowRightLeft } from 'lucide-react'
 
 export default function CreateAgreement() {
   const navigate = useNavigate()
-  const { me } = useParty()
+  const { me, switchParty } = useParty()
   const [parties, setParties] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -27,10 +27,12 @@ export default function CreateAgreement() {
   useEffect(() => {
     getParties().then((list) => {
       setParties(list)
-      // Pick the other party as default buyer
-      const other = list.find((p) => p.name !== me?.name)
-      if (other) {
-        setForm((prev) => ({ ...prev, buyer: other.name }))
+      // Pick the valid buyer party (not the seller ABCElectronics)
+      const validBuyers = list.filter(
+        (p) => !p.name.includes('ABCElectronics') && p.organisation !== 'ABCElectronics'
+      )
+      if (validBuyers.length > 0) {
+        setForm((prev) => ({ ...prev, buyer: prev.buyer || validBuyers[0].name }))
       }
     }).catch(console.error)
   }, [me])
@@ -71,7 +73,18 @@ export default function CreateAgreement() {
 
     setSubmitting(true)
     try {
-      const res = await createAgreement(form)
+      const payload = {
+        productName: form.productName.trim(),
+        description: form.description?.trim() || '',
+        quantity: Number(form.quantity),
+        unit: form.unit?.trim() || 'units',
+        totalPrice: Number(form.totalPrice),
+        currency: form.currency || 'INR',
+        deliveryDate: form.deliveryDate.includes('T') ? form.deliveryDate : `${form.deliveryDate}T00:00:00Z`,
+        buyerParty: form.buyer,
+        buyer: form.buyer,
+      }
+      const res = await createAgreement(payload)
       setSuccess(`Agreement created on Corda ledger! ID: ${res.agreementId}`)
       setTimeout(() => {
         navigate(`/agreements/${res.agreementId}`)
@@ -89,6 +102,16 @@ export default function CreateAgreement() {
     return m ? m[1] : name
   }
 
+  const isSeller =
+    me?.role === 'SELLER' ||
+    me?.party === 'ABCElectronics' ||
+    me?.organisation === 'ABCElectronics' ||
+    me?.name?.includes('ABCElectronics')
+
+  const sellerDisplay = isSeller
+    ? (me?.party || me?.organisation || shortOrg(me?.name))
+    : 'ABCElectronics'
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -105,6 +128,26 @@ export default function CreateAgreement() {
           </p>
         </div>
       </div>
+
+      {!isSeller && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
+            <div>
+              <p className="font-semibold text-sm">Active Identity: Buyer (XYZ Retailers)</p>
+              <p className="text-xs mt-0.5 text-amber-700">
+                In this Corda network, commercial agreements are proposed by Seller (ABC Electronics).
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => switchParty('SELLER')}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm"
+          >
+            <ArrowRightLeft className="w-3.5 h-3.5" /> Switch to Seller
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3">
@@ -133,10 +176,10 @@ export default function CreateAgreement() {
             <input
               type="text"
               disabled
-              value={shortOrg(me?.name)}
-              className="form-input bg-slate-50 text-slate-500 cursor-not-allowed font-medium"
+              value={sellerDisplay}
+              className="form-input bg-slate-50 text-slate-700 cursor-not-allowed font-medium"
             />
-            <p className="text-xs text-slate-400 mt-1">Identity from active Corda node</p>
+            <p className="text-xs text-slate-400 mt-1">Authorized Corda Seller Node (ABCElectronics)</p>
           </div>
 
           <div>
@@ -150,10 +193,10 @@ export default function CreateAgreement() {
             >
               <option value="">Select Buyer Party</option>
               {parties
-                .filter((p) => p.name !== me?.name)
+                .filter((p) => !p.name.includes('ABCElectronics') && p.organisation !== 'ABCElectronics')
                 .map((p) => (
                   <option key={p.name} value={p.name}>
-                    {shortOrg(p.name)} ({p.name})
+                    {p.organisation || shortOrg(p.name)} ({p.name})
                   </option>
                 ))}
             </select>

@@ -12,7 +12,11 @@ export default function TopBar() {
     return match ? match[1] : name
   }
 
-  const isSeller = me?.name?.includes('ABCElectronics')
+  const isSeller =
+    me?.role === 'SELLER' ||
+    me?.party === 'ABCElectronics' ||
+    me?.organisation === 'ABCElectronics' ||
+    me?.name?.includes('ABCElectronics')
   const roleColor = isSeller
     ? 'bg-blue-100 text-blue-800 border-blue-200'
     : 'bg-purple-100 text-purple-800 border-purple-200'
@@ -23,7 +27,9 @@ export default function TopBar() {
       <div className="flex items-center gap-2">
         <Building2 className="w-4 h-4 text-slate-400" />
         <span className="text-sm text-slate-500">Active identity:</span>
-        <span className="text-sm font-semibold text-slate-800">{shortName(me?.name)}</span>
+        <span className="text-sm font-semibold text-slate-800">
+          {me?.party || me?.organisation || shortName(me?.name)}
+        </span>
         {me && (
           <span className={`ml-2 text-xs px-2 py-0.5 rounded-full border font-medium ${roleColor}`}>
             {role}
@@ -59,7 +65,10 @@ export default function TopBar() {
             </div>
             {parties.map((p) => {
               const name = shortName(p.name)
-              const active = me?.name === p.name
+              const active =
+                me?.name === p.name ||
+                me?.party === p.organisation ||
+                me?.organisation === p.organisation
               return (
                 <button
                   key={p.name}

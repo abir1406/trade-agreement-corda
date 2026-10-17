@@ -81,7 +81,12 @@ export default function AgreementDetail() {
     )
   }
 
-  const isBuyer = me?.name === agreement.buyer
+  const isBuyer =
+    me?.role === 'BUYER' ||
+    me?.party === agreement.buyer ||
+    me?.organisation === agreement.buyer ||
+    me?.name === agreement.buyer ||
+    me?.name?.includes(agreement.buyer)
   const canApprove = agreement.status === 'PENDING' && isBuyer
 
   return (
@@ -112,6 +117,14 @@ export default function AgreementDetail() {
           >
             <CheckCircle className="w-4 h-4" />
             {approving ? 'Signing & Notarizing...' : 'Approve Agreement'}
+          </button>
+        )}
+        {agreement.status === 'PENDING' && !isBuyer && (
+          <button
+            onClick={() => switchParty(agreement.buyer)}
+            className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
+          >
+            Switch to {shortOrg(agreement.buyer)} to Approve
           </button>
         )}
       </div>

@@ -93,9 +93,14 @@ public class NodeRPCConnection {
         return activeRole;
     }
 
-    public synchronized void setActiveRole(String role) {
-        if ("BUYER".equalsIgnoreCase(role)) {
-            this.activeRole = "BUYER";
+    public synchronized void setActiveRole(String roleOrParty) {
+        if (roleOrParty != null) {
+            String upper = roleOrParty.toUpperCase();
+            if (upper.contains("BUYER") || upper.contains("XYZ") || upper.contains("PARIS")) {
+                this.activeRole = "BUYER";
+            } else {
+                this.activeRole = "SELLER";
+            }
         } else {
             this.activeRole = "SELLER";
         }
@@ -121,7 +126,29 @@ public class NodeRPCConnection {
     }
 
     public synchronized AgreementResponse createAgreement(CreateAgreementRequest request) throws Exception {
-        Party buyer = buyerParty;
+        String buyerPartyName = request.getBuyerParty();
+        if (buyerPartyName == null || buyerPartyName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Buyer party name is required.");
+        }
+
+        // Validate and resolve buyer party from configured network counterparties
+        Party buyer = null;
+        if (buyerParty.getName().toString().equalsIgnoreCase(buyerPartyName.trim()) ||
+                buyerParty.getName().getOrganisation().equalsIgnoreCase(buyerPartyName.trim())) {
+            buyer = buyerParty;
+        } else if (sellerParty.getName().toString().equalsIgnoreCase(buyerPartyName.trim()) ||
+                sellerParty.getName().getOrganisation().equalsIgnoreCase(buyerPartyName.trim())) {
+            buyer = sellerParty;
+        } else {
+            throw new IllegalArgumentException("Selected buyer party '" + buyerPartyName +
+                    "' does not exist on the configured Corda network. Configured parties: " +
+                    sellerParty.getName().getOrganisation() + ", " + buyerParty.getName().getOrganisation());
+        }
+
+        if (sellerParty.equals(buyer)) {
+            throw new IllegalArgumentException("Seller and Buyer must be distinct Corda network identities. Cannot create an agreement with yourself.");
+        }
+
         String agreementId = request.getAgreementId();
         if (agreementId == null || agreementId.trim().isEmpty()) {
             agreementId = "AGR-" + System.currentTimeMillis();
@@ -133,13 +160,14 @@ public class NodeRPCConnection {
                 request.getProductName(),
                 request.getDescription(),
                 request.getQuantity(),
-                request.getUnit(),
+                request.getUnit() != null ? request.getUnit() : "units",
                 request.getTotalPrice(),
-                request.getCurrency(),
+                request.getCurrency() != null ? request.getCurrency() : "INR",
                 request.getDeliveryDate()
         );
 
-        log.info("Executing CreateTradeAgreementFlow for agreementId: {}", agreementId);
+        log.info("Executing CreateTradeAgreementFlow for agreementId: {} with Seller [{}] and Buyer [{}]",
+                agreementId, sellerParty.getName().getOrganisation(), buyer.getName().getOrganisation());
         CordaFuture<SignedTransaction> future = sellerNode.startFlow(flow);
         network.runNetwork();
         SignedTransaction signedTx = future.get();
