@@ -22,6 +22,7 @@ async function request(method, path, body) {
   return data
 }
 
+
 // ── Party & Identity ──────────────────────────────────────────────────────────
 export const getMe = () => request('GET', '/me')
 export const getParties = () => request('GET', '/parties')
